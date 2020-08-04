@@ -4,15 +4,53 @@ from requests.auth import HTTPBasicAuth
 from messaging.mms.message import MMSMessage, MMSMessagePage
 from cStringIO import StringIO
 import socket
+import ConfigParser
+import os
+import sys
+from datetime import datetime
 
-url = 'http://192.168.0.242/tmpfs/auto.jpg'
-login = 'login'
-passwd = 'passwd'
+url = ''
+login = ''
+passwd = ''
+tmp_image = ''
+telephone = ''
+MMSC = ''
 
-tmp_image = '/tmp/image.jpg'
+def get_config():
 
-telephone = '+336XXXXXXXX'
-MMSC = 'mms.free.fr'
+    global url
+    global login
+    global passwd
+    global tmp_image
+    global telephone
+    global MMSC
+    config = ConfigParser.ConfigParser()
+    if os.path.exists(os.environ['HOME']+'/.mmsrc.conf'):
+        config.read (os.environ['HOME']+'/.mmsrc.conf')
+    else:
+        if os.path.exists(os.environ['HOME']+'/.mmsrc.conf'):
+            config.read ('/etc/mmsrc.conf')
+        else:
+            if sys.version_info[0] < 3:
+                config.add_section('mms')
+                config.set('mms', 'url', 'http://192.168.0.242/tmpfs/auto.jpg')
+                config.set('mms', 'login', 'login')
+                config.set('mms', 'passwd', 'passwd')
+                config.set('mms', 'tmp_image', '/tmp/image.jpg')
+                config.set('mms', 'telephone', '+336aabbccdd')
+                config.set('mms', 'MMSC', 'mms.free.fr')
+                config.set('mms', 'notused', 'true')
+            else :
+                config['mms'] = {'url': 'http://192.168.0.242/tmpfs/auto.jpg', 'login': 'login', 'passwd': 'passwd', 'tmp_image':'/tmp/image.jpg', 'telephone': '+336aabbccdd','MMSC': 'mms.free.fr', 'notused': 'true'}
+            config.write(open(os.environ['HOME']+'/.mmsrc.conf', 'w'))
+            print 'Sample default file created in ' + os.environ['HOME']+'/.mmsrc.conf'
+            sys.exit()
+    url = config.get('mms', 'url')
+    login = config.get('mms', 'login')
+    passwd = config.get('mms', 'passwd')
+    tmp_image = config.get('mms', 'tmp_image')
+    telephone = config.get('mms', 'telephone')
+    MMSC =  config.get('mms', 'MMSC')
 
 def get_image():
     html=requests.get(url,auth=HTTPBasicAuth(login,passwd))
@@ -21,6 +59,10 @@ def get_image():
     file.close()
 
 def send_message():
+
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+
     mms = MMSMessage()
     mms.headers['To'] = telephone + '/TYPE=PLMN'
     mms.headers['Message-Type'] = 'm-send-req'
@@ -28,7 +70,7 @@ def send_message():
 
     slide1 = MMSMessagePage()
     slide1.add_image(tmp_image)
-    slide1.add_text('Image Alarm.')
+    slide1.add_text('Image Alarm.' + dt_string)
 
     mms.add_page(slide1)
 
@@ -56,5 +98,6 @@ def send_message():
     buf.close()
 
 if __name__ == '__main__':
+    get_config()
     get_image()
     send_message()
