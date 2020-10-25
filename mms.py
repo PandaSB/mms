@@ -28,7 +28,7 @@ def get_config():
     if os.path.exists(os.environ['HOME']+'/.mmsrc.conf'):
         config.read (os.environ['HOME']+'/.mmsrc.conf')
     else:
-        if os.path.exists(os.environ['HOME']+'/.mmsrc.conf'):
+        if os.path.exists('/etc/mmsrc.conf'):
             config.read ('/etc/mmsrc.conf')
         else:
             if sys.version_info[0] < 3:
